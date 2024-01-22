@@ -3,6 +3,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <algorithm>
 
 using namespace std;
 class Utility_chain_prefix_node{
@@ -12,9 +13,9 @@ public:
     int ru;
     Utility_chain_prefix_node *next;
     Utility_chain_prefix_node(){
-        tid_prefix=0;
-        acu=0;
-        ru=0;
+        tid_prefix=-1;
+        acu=-1;
+        ru=-1;
         next = nullptr;
     }
 };
@@ -26,9 +27,9 @@ public:
     Utility_chain_prefix_node *prefix_node_head;
     Utility_chain_sid_node *next;
     Utility_chain_sid_node(){
-        sid=0;
-        peu_sid = 0;
-        iu=0;
+        sid=-1;
+        peu_sid = -1;
+        iu=-1;
         prefix_node_head =nullptr;
         next =nullptr;
 
@@ -42,8 +43,8 @@ public:
     Utility_chain_sid_node *sid_node_head;
     Seq_table(){
         seq = "";
-        Peu=0;
-        U_t=0;
+        Peu=-1;
+        U_t=-1;
         sid_node_head=nullptr;
     }
 };
@@ -250,6 +251,7 @@ void init_level1(const vector<vector<vector<int>>> &Utility_Matrix_set,const vec
 void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector<vector<vector<int>>> &Utility_Ru_Matrix_set
               ,const map<int,Seq_table*> &single_item_Utility_Chain,const int &item_quantity,const int &threshold,int level
               ,vector<Seq_table*> &HUSP_set
+              ,Seq_table *t_uc
               ){
     level++;
     map<int,int> ilist_and_rsu,slist_and_rsu;//first->可擴展item second->可擴展item的RSU
@@ -329,92 +331,376 @@ void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector
 //
 //            cout<<endl<<endl;
 
+
             Seq_table *t1_uc;//t'的uc
-            for(pair<const int,int> item:ilist_and_rsu){
+            Utility_chain_sid_node *t1_sid_node_it , *t_sid_node_it;
+            Utility_chain_prefix_node *t1_prefix_node_it ,*t_prefix_node_it;
+            for(pair<const int,int> item:ilist_and_rsu) {
                 if(item.second < threshold){ //delete low RSU items
                     continue;
                 }
                 t1_uc = new Seq_table;
-                t1_uc->seq = i.second->seq + to_string(item.first);
+                t1_uc->seq = i.second->seq +' '+ to_string(item.first);
                 t1_uc->sid_node_head = new Utility_chain_sid_node;
 
-                sid_node_it = t1_uc->sid_node_head;
+                t1_sid_node_it = t1_uc->sid_node_head;
 
-                sid_node_it->prefix_node_head = new Utility_chain_prefix_node;
-                prefix_node_it = sid_node_it->prefix_node_head;
-                for(int x=0;x<Utility_Matrix_set.size();x++) {
+                t1_sid_node_it->prefix_node_head = new Utility_chain_prefix_node;
+                t1_prefix_node_it = t1_sid_node_it->prefix_node_head;
+
+                t_sid_node_it=i.second->sid_node_head;
 
 
+                int max_sid_peu,max_sid_iu;
+                int seq_Peu=0,seq_U_t=0;
+                bool t1_prefix_flag;
+                while(t_sid_node_it->next != nullptr){
+                    t1_prefix_flag = false;
+                    max_sid_peu=0;
+                    max_sid_iu=0;
+                    t_prefix_node_it = t_sid_node_it->prefix_node_head;
+                    while(t_prefix_node_it ->next !=nullptr){
+                        //cout<<t_prefix_node_it->acu;
+                        if(Utility_Matrix_set[t_sid_node_it->sid][t_prefix_node_it->tid_prefix][item.first]>0){//>0代表找到t'投影點
+                            //cout<<Utility_Matrix_set[t_sid_node_it->sid][t_prefix_node_it->tid_prefix][item.first];
+
+                            t1_prefix_flag = true;
+                            t1_prefix_node_it->acu = t_prefix_node_it->acu + Utility_Matrix_set[t_sid_node_it->sid][t_prefix_node_it->tid_prefix][item.first];
+                            t1_prefix_node_it->ru = Utility_Ru_Matrix_set[t_sid_node_it->sid][t_prefix_node_it->tid_prefix][item.first];
+                            if(t1_prefix_node_it->acu + t1_prefix_node_it->ru>max_sid_peu && t1_prefix_node_it->ru>0){
+                                max_sid_peu = t1_prefix_node_it->acu + t1_prefix_node_it->ru;
+                            }
+                            if(t1_prefix_node_it->acu>max_sid_iu){
+                                max_sid_iu = t1_prefix_node_it->acu;
+                            }
+                            t1_prefix_node_it->tid_prefix = t_prefix_node_it->tid_prefix;
+                            t1_prefix_node_it->next = new Utility_chain_prefix_node;
+                            t1_prefix_node_it = t1_prefix_node_it->next;
+                            //cout<<t1_prefix_node_it->acu;
+                        }
+                        t_prefix_node_it = t_prefix_node_it ->next;
+                    }
+                    if(t1_prefix_flag){
+                        t1_sid_node_it->sid = t_sid_node_it->sid;
+                        t1_sid_node_it->iu =max_sid_iu;
+                        t1_sid_node_it->peu_sid = max_sid_peu;
+                        t1_sid_node_it->next = new Utility_chain_sid_node;
+                        t1_sid_node_it = t1_sid_node_it->next;
+                        t1_sid_node_it->prefix_node_head = new Utility_chain_prefix_node;
+                        t1_prefix_node_it = t1_sid_node_it->prefix_node_head;
+
+                        seq_Peu+=max_sid_peu;
+                        seq_U_t+=max_sid_iu;
+                    }
+                    t_sid_node_it = t_sid_node_it->next;
                 }
 
-//                Seq_Table = new Seq_table;
-//                Seq_Table->seq += to_string(item);
-//                Seq_Table->sid_node_head = new Utility_chain_sid_node;
-//
-//                Utility_chain_sid_node *sid_node_it;
-//                sid_node_it = Seq_Table->sid_node_head;
-//
-//                sid_node_it->prefix_node_head = new Utility_chain_prefix_node;
-//                Utility_chain_prefix_node *prefix_node_it = sid_node_it->prefix_node_head;
-//
-//                for(int i=0;i<Utility_Matrix_set.size();i++){
-//                    sid_peu=0;
-//                    iu=0;
-//                    for(int j=0;j<Utility_Matrix_set[i].size();j++){
-//                        if(Utility_Matrix_set[i][j][item]>0){
-//                            iu_add_ru=Utility_Matrix_set[i][j][item]+Utility_Ru_Matrix_set[i][j][item];
-//                            if(iu_add_ru>sid_peu && Utility_Ru_Matrix_set[i][j][item]>0){
-//                                sid_peu=iu_add_ru;
-//                            }
-//
-//                            if(Utility_Matrix_set[i][j][item]>iu){
-//                                iu=Utility_Matrix_set[i][j][item];
-//                            }
-//
-//                            prefix_node_it->tid_prefix = j;
-//                            prefix_node_it->acu = Utility_Matrix_set[i][j][item];
-//                            prefix_node_it->ru = Utility_Ru_Matrix_set[i][j][item];
-//                            prefix_node_it->next = new Utility_chain_prefix_node;
-//                            prefix_node_it = prefix_node_it->next;
-//                        }
-//                    }
-//                    if(sid_node_it->prefix_node_head != prefix_node_it){
-//                        sid_node_it->peu_sid=sid_peu;
-//                        sid_node_it->sid = i;
-//                        sid_node_it->iu = iu;
-//
-//                        sid_node_it->next = new Utility_chain_sid_node;
-//                        sid_node_it = sid_node_it->next;
-//
-//                        sid_node_it->prefix_node_head = new Utility_chain_prefix_node;
-//                        prefix_node_it = sid_node_it->prefix_node_head;
-//                    }
-//                }
-//
-//                if(Seq_Table->sid_node_head != sid_node_it){
-//                    Pue=Seq_Table->sid_node_head->peu_sid;
-//                    Iu = Seq_Table->sid_node_head->iu;
-//                    sid_node_it = Seq_Table->sid_node_head;
-//                    while(sid_node_it->next){
-//                        sid_node_it=sid_node_it->next;
-//                        Pue+=sid_node_it->peu_sid;
-//                        Iu+=sid_node_it->iu;
-//                    }
-//                    Seq_Table->Peu = Pue;
-//                    Seq_Table->U_t = Iu;
-////            cout<<Seq_Table->seq<<"\n";
-////            cout<<Seq_Table->Peu<<"\n";
-////            cout<<Seq_Table->U_t<<"\n\n";
-//                }
-
+                t1_uc->U_t = seq_U_t;
+                t1_uc->Peu = seq_Peu;
+                if(t1_uc->U_t>threshold){
+                    HUSP_set.push_back(t1_uc);
+                }
             }
 
-            for(pair<const int,int> item:slist_and_rsu){
+            for(pair<const int,int> item:slist_and_rsu) {
                 if(item.second < threshold){ //delete low RSU items
                     continue;
                 }
+                t1_uc = new Seq_table;
+                t1_uc->seq = i.second->seq +','+ to_string(item.first);
+                t1_uc->sid_node_head = new Utility_chain_sid_node;
 
+                t1_sid_node_it = t1_uc->sid_node_head;
+
+                t1_sid_node_it->prefix_node_head = new Utility_chain_prefix_node;
+                t1_prefix_node_it = t1_sid_node_it->prefix_node_head;
+
+                t_sid_node_it=i.second->sid_node_head;
+
+
+                int max_sid_peu,max_sid_iu;
+                int seq_Peu=0,seq_U_t=0;
+                bool t1_prefix_flag;
+                vector<int> prefix_checker;
+                vector<int>::iterator prefix_checker_it;
+
+                while(t_sid_node_it->next != nullptr) {
+//                    cout<<t_sid_node_it->sid;
+//                    cout<<t_sid_node_it->iu;
+                    t_prefix_node_it = t_sid_node_it->prefix_node_head;
+                    prefix_checker.clear();
+                    max_sid_peu = 0;
+                    max_sid_iu = 0;
+                    t1_prefix_flag = false;
+                    while(t_prefix_node_it ->next !=nullptr) {
+                        //cout<<t_prefix_node_it->acu;
+                        for(int x=t_prefix_node_it->tid_prefix+1;x<Utility_Matrix_set[t_sid_node_it->sid].size();x++){
+                            if(Utility_Matrix_set[t_sid_node_it->sid][x][item.first]>0){//代表找到t'投影點
+                                t1_prefix_flag = true;
+                                //cout<<Utility_Matrix_set[t_sid_node_it->sid][x][item.first];
+                                prefix_checker_it = find(prefix_checker.begin(),prefix_checker.end(),x);
+                                if(prefix_checker_it!=prefix_checker.end()){ //有投影點已經在Chain裡面的話就更新acu值，沒的話就新增Chain
+                                    Utility_chain_prefix_node *t_it=t1_sid_node_it->prefix_node_head;
+                                    for(int tmp = 0 ; tmp <distance(prefix_checker.begin(), prefix_checker_it) ; tmp++){//做幾次it++
+                                        t_it = t_it->next;
+                                    }
+                                    if(t_it ->acu < t_prefix_node_it->acu + Utility_Matrix_set[t_sid_node_it->sid][x][item.first]){
+                                        t_it ->acu = t_prefix_node_it->acu + Utility_Matrix_set[t_sid_node_it->sid][x][item.first];
+                                        //cout<<t_prefix_node_it->acu + Utility_Matrix_set[t_sid_node_it->sid][x][item.first];
+                                    }
+                                    if(t_it->acu + t_it->ru > max_sid_peu && t_it->ru >0){
+                                        max_sid_peu = t_it->acu + t_it->ru;
+                                    }
+                                    if(t_it->acu>max_sid_iu){
+                                        max_sid_iu = t_it->acu;
+                                    }
+
+                                }else{
+                                    t1_prefix_node_it->acu = t_prefix_node_it->acu + Utility_Matrix_set[t_sid_node_it->sid][x][item.first];
+                                    t1_prefix_node_it->ru = Utility_Ru_Matrix_set[t_sid_node_it->sid][x][item.first];
+                                    if(t1_prefix_node_it->acu + t1_prefix_node_it->ru > max_sid_peu && t1_prefix_node_it->ru>0){
+                                        max_sid_peu = t1_prefix_node_it->acu + t1_prefix_node_it->ru;
+                                    }
+                                    if(t1_prefix_node_it->acu > max_sid_iu){
+                                        max_sid_iu = t1_prefix_node_it->acu;
+                                    }
+                                    t1_prefix_node_it->tid_prefix = x;
+                                    t1_prefix_node_it->next = new Utility_chain_prefix_node;
+                                    t1_prefix_node_it = t1_prefix_node_it->next;
+
+                                    prefix_checker.push_back(x);
+                                }
+
+                            }
+                        }
+                        t_prefix_node_it = t_prefix_node_it ->next;
+                    }
+
+                    if(t1_prefix_flag) {
+                        t1_sid_node_it->sid = t_sid_node_it->sid;
+                        t1_sid_node_it->iu =max_sid_iu;
+                        t1_sid_node_it->peu_sid = max_sid_peu;
+                        t1_sid_node_it->next = new Utility_chain_sid_node;
+                        t1_sid_node_it = t1_sid_node_it->next;
+                        t1_sid_node_it->prefix_node_head = new Utility_chain_prefix_node;
+                        t1_prefix_node_it = t1_sid_node_it->prefix_node_head;
+
+                        seq_Peu+=max_sid_peu;
+                        seq_U_t+=max_sid_iu;
+                    }
+
+                    t_sid_node_it = t_sid_node_it->next;
+                }
+
+                t1_uc->U_t = seq_U_t;
+                t1_uc->Peu = seq_Peu;
+                if(t1_uc->U_t>threshold){
+                    HUSP_set.push_back(t1_uc);
+                }
+
+//                cout<<t1_uc->sid_node_head->sid;
+//                cout<<t1_uc->sid_node_head->iu;
+//                cout<<t1_uc->sid_node_head->prefix_node_head->acu;
+//                cout<<t1_uc->sid_node_head->prefix_node_head->ru;
+//                cout<<t1_uc->sid_node_head->prefix_node_head->next->acu;
+//                cout<<t1_uc->sid_node_head->prefix_node_head->next->ru;
+//                cout<<t1_uc->sid_node_head->prefix_node_head->next->next->acu;
+//                cout<<t1_uc->sid_node_head->prefix_node_head->next->next->ru;
+//
+//                cout<<t1_uc->sid_node_head->next->sid;
+//                cout<<t1_uc->sid_node_head->next->iu;
+//                cout<<t1_uc->sid_node_head->next->prefix_node_head->acu;
+//                cout<<t1_uc->sid_node_head->next->prefix_node_head->ru;
+//                cout<<t1_uc->sid_node_head->next->prefix_node_head->next->acu;
+//                cout<<t1_uc->sid_node_head->next->prefix_node_head->next->ru;
+//
+//                cout<<t1_uc->sid_node_head->next->next->sid;
+//                cout<<t1_uc->sid_node_head->next->next->iu;
             }
+
+
+
+
+
+
+
+
+//            for(pair<const int,int> item:ilist_and_rsu){
+//                if(item.second < threshold){ //delete low RSU items
+//                    continue;
+//                }
+//                t1_uc = new Seq_table;
+//                t1_uc->seq = i.second->seq +' '+ to_string(item.first);
+//                t1_uc->sid_node_head = new Utility_chain_sid_node;
+//
+//                t1_sid_node_it = t1_uc->sid_node_head;
+//
+//                t1_sid_node_it->prefix_node_head = new Utility_chain_prefix_node;
+//                t1_prefix_node_it = t1_sid_node_it->prefix_node_head;
+//
+//                sid_node_it=i.second->sid_node_head;
+//                prefix_node_it=sid_node_it->prefix_node_head;
+//
+//                int sid_peu,sid_acu;
+//                int Peu=0,U_t=0;
+//                bool t1_prefix_flag;
+//                while(sid_node_it->next){
+//
+//
+//                    sid_peu=0;
+//                    sid_acu=0;
+//                    t1_prefix_flag=false;
+//                    while(prefix_node_it->next){
+////                        cout<<sid_node_it->sid;
+////                        cout<<prefix_node_it->tid_prefix;
+//                        if(Utility_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][item.first]>0){
+//                            t1_prefix_flag=true;
+////                            if(Utility_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][item.first]>sid_acu){
+////                                sid_acu=Utility_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][item.first];
+////                            }
+////                            if(Utility_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][item.first] + Utility_Ru_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][item.first] > sid_peu
+////                            && Utility_Ru_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][item.first]>0){
+////                                sid_peu=Utility_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][item.first]+Utility_Ru_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][item.first];
+////                            }
+//                            t1_prefix_node_it->acu = prefix_node_it->acu + Utility_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][item.first];
+//                            t1_prefix_node_it->ru = Utility_Ru_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][item.first];
+//
+//                            if(t1_prefix_node_it->acu > sid_acu){
+//                                sid_acu=t1_prefix_node_it->acu;
+//                            }
+//                            if(t1_prefix_node_it->acu+t1_prefix_node_it->ru > sid_peu && t1_prefix_node_it->ru>0){
+//                                sid_peu = t1_prefix_node_it->acu+t1_prefix_node_it->ru;
+//                            }
+//                            t1_prefix_node_it->tid_prefix = prefix_node_it->tid_prefix;
+//                            t1_prefix_node_it->next = new Utility_chain_prefix_node;
+//                            t1_prefix_node_it = t1_prefix_node_it->next;
+//                        }
+//
+//                        prefix_node_it=prefix_node_it->next;
+//                    }
+//                    if(t1_prefix_flag){//not prefix not new
+//                        Peu+=sid_peu;
+//                        U_t+=sid_acu;
+//                        t1_sid_node_it->peu_sid = sid_peu;
+//                        t1_sid_node_it->iu = sid_acu;
+//                        t1_sid_node_it->sid =sid_node_it->sid;
+//                        t1_sid_node_it->next =new Utility_chain_sid_node;
+//                        t1_sid_node_it=t1_sid_node_it->next;
+//                    }
+//
+//
+//                    sid_node_it= sid_node_it->next;
+//                }
+//                t1_uc->U_t = U_t;
+//                t1_uc->Peu = Peu;
+//                if(t1_uc->U_t>threshold){
+//                    HUSP_set.push_back(t1_uc);
+//                }
+//                //HUS_Span(Utility_Matrix_set,Utility_Ru_Matrix_set,single_item_Utility_Chain,item_quantity,threshold,level,HUSP_set,t1_uc);
+//
+//            }
+
+
+
+//            for(pair<const int,int> item:slist_and_rsu){
+//                if(item.second < threshold){ //delete low RSU items
+//                    continue;
+//                }
+//                t1_uc = new Seq_table;
+//                t1_uc->seq = i.second->seq +','+ to_string(item.first);
+//
+//                t1_uc->sid_node_head = new Utility_chain_sid_node;
+//
+//                t1_sid_node_it = t1_uc->sid_node_head;
+//
+//                t1_sid_node_it->prefix_node_head = new Utility_chain_prefix_node;
+//                t1_prefix_node_it = t1_sid_node_it->prefix_node_head;
+//
+//                sid_node_it=i.second->sid_node_head;
+//
+//                int sid_peu,sid_acu;
+//                int Peu=0,U_t=0;
+//                Utility_chain_prefix_node *tmp_it;
+//                bool flag;
+//                while(sid_node_it->next){
+//                    sid_peu=0;
+//                    sid_acu=0;
+//                    prefix_node_it =sid_node_it->prefix_node_head;
+//
+//                    while(prefix_node_it->next){
+//                        cout<<sid_node_it->sid;
+//                        cout<<prefix_node_it->tid_prefix;
+//                        for(int x=prefix_node_it->tid_prefix+1;x<Utility_Matrix_set[sid_node_it->sid].size();x++){
+//                            if(Utility_Matrix_set[sid_node_it->sid][x][item.first]>0) {
+//                                tmp_it = t1_sid_node_it->prefix_node_head;
+//                                flag = false;
+//                                while (tmp_it->next){
+//                                    if(tmp_it->tid_prefix == x){
+//                                        if(tmp_it->acu + tmp_it->ru < prefix_node_it->acu+Utility_Ru_Matrix_set[sid_node_it->sid][x][item.first]){
+//                                            tmp_it->acu = prefix_node_it->acu+Utility_Ru_Matrix_set[sid_node_it->sid][x][item.first];
+//                                            tmp_it->ru = Utility_Ru_Matrix_set[sid_node_it->sid][x][item.first];
+//
+//                                            if(tmp_it->acu > sid_acu){
+//                                                sid_acu=t1_prefix_node_it->acu;
+//                                            }
+//                                            if(tmp_it->acu+tmp_it->ru > sid_peu && tmp_it->ru>0){
+//                                                sid_peu = tmp_it->acu+tmp_it->ru;
+//                                            }
+//                                        }
+//                                        flag = true;
+//                                        break;
+//                                    }
+//                                    tmp_it = tmp_it->next;
+//                                }
+//
+////                                if(Utility_Matrix_set[sid_node_it->sid][x][item.first]>sid_acu){
+////                                    sid_acu=Utility_Matrix_set[sid_node_it->sid][x][item.first];
+////                                }
+////                                if(Utility_Matrix_set[sid_node_it->sid][x][item.first] + Utility_Ru_Matrix_set[sid_node_it->sid][x][item.first] >sid_peu
+////                                   && Utility_Ru_Matrix_set[sid_node_it->sid][x][item.first]>0){
+////                                    sid_peu = Utility_Matrix_set[sid_node_it->sid][x][item.first] + Utility_Ru_Matrix_set[sid_node_it->sid][x][item.first];
+////                                }
+//                                if(!flag){
+//                                    t1_prefix_node_it->acu = prefix_node_it->acu + Utility_Matrix_set[sid_node_it->sid][x][item.first];
+//                                    t1_prefix_node_it->ru = Utility_Ru_Matrix_set[sid_node_it->sid][x][item.first];
+//                                    if(t1_prefix_node_it->acu > sid_acu){
+//                                        sid_acu=t1_prefix_node_it->acu;
+//                                    }
+//                                    if(t1_prefix_node_it->acu+t1_prefix_node_it->ru > sid_peu && t1_prefix_node_it->ru>0){
+//                                        sid_peu = t1_prefix_node_it->acu+t1_prefix_node_it->ru;
+//                                    }
+//
+//                                    t1_prefix_node_it->tid_prefix = x;
+//                                    t1_prefix_node_it->next = new Utility_chain_prefix_node;
+//                                    t1_prefix_node_it = t1_prefix_node_it->next;
+//                                }
+//
+//                            }
+//
+//                        }
+//
+//                        prefix_node_it = prefix_node_it->next;
+//                    }
+//
+//                    Peu+=sid_peu;
+//                    U_t+=sid_acu;
+//                    t1_sid_node_it->peu_sid = sid_peu;
+//                    t1_sid_node_it->iu = sid_acu;
+//                    t1_sid_node_it->sid =sid_node_it->sid;
+//                    t1_sid_node_it->next =new Utility_chain_sid_node;
+//                    t1_sid_node_it=t1_sid_node_it->next;
+//
+//                    sid_node_it = sid_node_it->next;
+//                }
+//
+//                t1_uc->U_t = U_t;
+//                t1_uc->Peu = Peu;
+//                if(t1_uc->U_t>threshold){
+//                    HUSP_set.push_back(t1_uc);
+//                }
+//                //HUS_Span(Utility_Matrix_set,Utility_Ru_Matrix_set,single_item_Utility_Chain,item_quantity,threshold,level,HUSP_set,t1_uc);
+//
+//            }
 
             ilist_and_rsu.clear();
             slist_and_rsu.clear();
@@ -439,12 +725,37 @@ int main() {
     map<int,Seq_table*> single_item_Utility_Chain;
     vector<Seq_table*> HUSP_set;
     init_level1(Utility_Matrix_set,Utility_Ru_Matrix_set,item_quantity,threshold,single_item_swu,single_item_Utility_Chain);
-    HUS_Span(Utility_Matrix_set,Utility_Ru_Matrix_set,single_item_Utility_Chain,item_quantity,threshold,0,HUSP_set);
+    HUS_Span(Utility_Matrix_set,Utility_Ru_Matrix_set,single_item_Utility_Chain,item_quantity,threshold,0,HUSP_set,
+             nullptr);
 
     for(auto i:HUSP_set){
-        cout<<i->seq<<endl;
-        cout<<i->U_t<<endl;
+        cout<<"seq:"<<i->seq<<endl;
+        cout<<"U_t:"<<i->U_t<<endl;
+        cout<<"Peu:"<<i->Peu<<endl;
     }
+
+//    Utility_chain_sid_node *siit;
+//    siit = HUSP_set[1]->sid_node_head;
+//    siit = siit->next;
+//    siit = siit->next;
+//    Utility_chain_prefix_node *piit;
+    //piit = siit->prefix_node_head;
+//    cout<<"seq:"<<HUSP_set[0]->sid_node_head<<endl;
+//    cout<<"seq:"<<siit->prefix_node_head->acu<<endl;
+//    cout<<"seq:"<<siit->prefix_node_head->next->acu<<endl;
+//    cout<<"seq:"<<siit->prefix_node_head->next->next->acu<<endl;
+//    cout<<"seq:"<<siit->prefix_node_head->next->next->next->acu<<endl;
+//    cout<<"seq:"<<siit->prefix_node_head->next->next->acu<<endl;
+//    cout<<"seq:"<<siit->prefix_node_head->next->next->next<<endl;
+//    while(siit->next){
+//        cout<<"sid:"<<siit->sid<<endl;
+//        while (piit->next){
+//            cout<<piit->tid_prefix<<" ";
+//            piit = piit->next;
+//        }
+//        cout<<endl;
+//        siit = siit->next;
+//    }
     //cout<<single_item_iu[5]<<" "<<single_item_swu[5];
     //cout<<item_quantity;
 //    for(int i=0;i<Utility_Matrix_set.size();i++){
