@@ -53,7 +53,7 @@ public:
 
 void init_UMatrix_RMatrix(vector<vector<vector<int>>> &Utility_Matrix_set,vector<vector<vector<int>>> &Utility_Ru_Matrix_set,int &item_quantity,map<int,int> &single_item_iu,map<int,int> &single_item_swu){
     ifstream in;
-    in.open("uspanutb.txt");
+    in.open("paper_utb.txt");
     if(in.fail()){
         cout << "input file opening failed";
         exit(1);
@@ -72,7 +72,7 @@ void init_UMatrix_RMatrix(vector<vector<vector<int>>> &Utility_Matrix_set,vector
     }
     in.close();
 
-    in.open("uspandata.txt");
+    in.open("paper_db.txt");
     if(in.fail()){
         cout << "input file opening failed";
         exit(1);
@@ -290,7 +290,6 @@ void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector
                             }else{
                                 ilist_and_rsu[x]+=sid_node_it->peu_sid;
                             }
-                            break;
                         }
                         //temp++;
                         prefix_node_it = prefix_node_it->next;
@@ -306,7 +305,6 @@ void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector
                             }else{
                                 slist_and_rsu[x]+=sid_node_it->peu_sid;
                             }
-                            break;
                         }
                     }
                 }
@@ -537,7 +535,6 @@ void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector
                         }else{
                             ilist_and_rsu[x]+=sid_node_it->peu_sid;
                         }
-                        break;
                     }
                     //temp++;
                     prefix_node_it = prefix_node_it->next;
@@ -553,7 +550,6 @@ void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector
                         }else{
                             slist_and_rsu[x]+=sid_node_it->peu_sid;
                         }
-                        break;
                     }
                 }
             }
