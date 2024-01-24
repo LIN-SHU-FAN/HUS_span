@@ -273,48 +273,86 @@ void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector
             }
             //cout<<i.first<<"\n";
             //cout<<i.second->Peu<<"\n";
+
             sid_node_it = i.second->sid_node_head;
-            while(sid_node_it->next!=nullptr){
-                //Utility_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][i.first//item];
-                //temp=0;
-                for(int x=i.first+1;x<item_quantity;x++) { //ilist
-                    prefix_node_it = sid_node_it->prefix_node_head;
-                    while(prefix_node_it->next!=nullptr){
-//                        cout<<sid_node_it->sid;
-//                        cout<<prefix_node_it->tid_prefix;
-//                        cout<<x;
-                        if(Utility_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][x]>0){
+            while(sid_node_it->next!=nullptr) {
+                prefix_node_it = sid_node_it->prefix_node_head;
+                while(prefix_node_it->next!=nullptr){
+                    for(int x=i.second->prefix_item+1;x<item_quantity;x++) {
+                        if(Utility_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][x]>0) {//build ilist
+//                            if(sid_node_it->sid == 3 && x==1){
+//                                cout<<"T";
+//                            }
                             if (ilist_and_rsu.find(x) == ilist_and_rsu.end()) {
-                                ilist_and_rsu[x]=sid_node_it->peu_sid;
-
+                                ilist_and_rsu[x] = sid_node_it->peu_sid;
                             }else{
-                                ilist_and_rsu[x]+=sid_node_it->peu_sid;
-                            }
-                        }
-                        //temp++;
-                        prefix_node_it = prefix_node_it->next;
-                    }
-
-                }
-                for(int x=0;x<item_quantity;x++) {//slist
-                    for(int y=sid_node_it->prefix_node_head->tid_prefix+1;y<Utility_Matrix_set[sid_node_it->sid].size();y++){
-                        if(Utility_Matrix_set[sid_node_it->sid][y][x]>0){
-                            //slist_and_rsu[x]=sid_node_it->peu_sid;
-                            if (slist_and_rsu.find(x) == slist_and_rsu.end()) {
-                                slist_and_rsu[x]=sid_node_it->peu_sid;
-                            }else{
-                                slist_and_rsu[x]+=sid_node_it->peu_sid;
+                                ilist_and_rsu[x] += sid_node_it->peu_sid;
                             }
                         }
                     }
+
+                    for(int x=0;x<item_quantity;x++) {
+                        for(int y=prefix_node_it->tid_prefix+1;y<Utility_Matrix_set[sid_node_it->sid].size();y++){//build slist
+                            if(Utility_Matrix_set[sid_node_it->sid][y][x]>0){
+                                if(slist_and_rsu.find(x) == slist_and_rsu.end()){
+                                    slist_and_rsu[x] = sid_node_it->peu_sid;
+                                }else{
+                                    slist_and_rsu[x] += sid_node_it->peu_sid;
+                                }
+                                break;
+                            }
+                        }
+                    }
+
+
+                    prefix_node_it = prefix_node_it->next;
                 }
-
-
                 sid_node_it = sid_node_it->next;
-
             }
+            //cout<<ilist_and_rsu[0];
+
+//            sid_node_it = i.second->sid_node_head;
+//            while(sid_node_it->next!=nullptr){
+//                //Utility_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][i.first//item];
+//                //temp=0;
+//                for(int x=i.first+1;x<item_quantity;x++) { //ilist
+//                    prefix_node_it = sid_node_it->prefix_node_head;
+//                    while(prefix_node_it->next!=nullptr){
+////                        cout<<sid_node_it->sid;
+////                        cout<<prefix_node_it->tid_prefix;
+////                        cout<<x;
+//                        if(Utility_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][x]>0){
+//                            if (ilist_and_rsu.find(x) == ilist_and_rsu.end()) {
+//                                ilist_and_rsu[x]=0;
+//                            }
+//                            break;
+//                        }
+//                        //temp++;
+//                        prefix_node_it = prefix_node_it->next;
+//                    }
+//                    //cout<<ilist_and_rsu[x];
+//
+//                }
+//                for(int x=0;x<item_quantity;x++) {//slist
+//                    for(int y=sid_node_it->prefix_node_head->tid_prefix+1;y<Utility_Matrix_set[sid_node_it->sid].size();y++){
+//                        if(Utility_Matrix_set[sid_node_it->sid][y][x]>0){
+//                            //slist_and_rsu[x]=sid_node_it->peu_sid;
+//                            if (slist_and_rsu.find(x) == slist_and_rsu.end()) {
+//                                slist_and_rsu[x]=0;
+//                            }
+//                            break;
+//                        }
+//                    }
+//                }
+//
+//
+//                sid_node_it = sid_node_it->next;
+//
+//            }
 
 
+//            cout<<ilist_and_rsu[0];
+//            cout<<slist_and_rsu[0];
 //            cout<<i.first<<"\n";
 //            for(pair<const int,int> x:slist_and_rsu){
 //                //先建t'CHAIN
@@ -343,6 +381,10 @@ void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector
                 t1_uc = new Seq_table;
                 t1_uc->seq = i.second->seq +' '+ to_string(item.first);
                 t1_uc->sid_node_head = new Utility_chain_sid_node;
+
+//                cout<<"seq:"<<t1_uc->seq<<endl;
+//                cout<<"prefix_item:"<<item.first<<endl;
+//                cout<<"RSU:"<<item.second<<endl;
 
                 t1_sid_node_it = t1_uc->sid_node_head;
 
@@ -514,50 +556,73 @@ void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector
             return;
         }
 
-        //cout<<i.first<<"\n";
-        //cout<<i.second->Peu<<"\n";
-//        cout<<t_uc->seq<<endl;
-//        cout<<t_uc->prefix_item<<endl;
         sid_node_it = t_uc->sid_node_head;
-        while(sid_node_it->next!=nullptr){
-            //Utility_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][i.first//item];
-            //temp=0;
-            for(int x=t_uc->prefix_item+1;x<item_quantity;x++) { //ilist
-                prefix_node_it = sid_node_it->prefix_node_head;
-                while(prefix_node_it->next!=nullptr){
-//                        cout<<sid_node_it->sid;
-//                        cout<<prefix_node_it->tid_prefix;
-//                        cout<<x;
-                    if(Utility_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][x]>0){
+        while(sid_node_it->next!=nullptr) {
+            prefix_node_it = sid_node_it->prefix_node_head;
+            while(prefix_node_it->next!=nullptr){
+                for(int x=t_uc->prefix_item+1;x<item_quantity;x++) {
+                    if(Utility_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][x]>0) {//build ilist
                         if (ilist_and_rsu.find(x) == ilist_and_rsu.end()) {
-                            ilist_and_rsu[x]=sid_node_it->peu_sid;
-
+                            ilist_and_rsu[x] = sid_node_it->peu_sid;
                         }else{
-                            ilist_and_rsu[x]+=sid_node_it->peu_sid;
-                        }
-                    }
-                    //temp++;
-                    prefix_node_it = prefix_node_it->next;
-                }
-
-            }
-            for(int x=0;x<item_quantity;x++) {//slist
-                for(int y=sid_node_it->prefix_node_head->tid_prefix+1;y<Utility_Matrix_set[sid_node_it->sid].size();y++){
-                    if(Utility_Matrix_set[sid_node_it->sid][y][x]>0){
-                        //slist_and_rsu[x]=sid_node_it->peu_sid;
-                        if (slist_and_rsu.find(x) == slist_and_rsu.end()) {
-                            slist_and_rsu[x]=sid_node_it->peu_sid;
-                        }else{
-                            slist_and_rsu[x]+=sid_node_it->peu_sid;
+                            ilist_and_rsu[x] += sid_node_it->peu_sid;
                         }
                     }
                 }
+
+                for(int x=0;x<item_quantity;x++) {
+                    for(int y=prefix_node_it->tid_prefix+1;y<Utility_Matrix_set[sid_node_it->sid].size();y++){//build slist
+                        if(Utility_Matrix_set[sid_node_it->sid][y][x]>0){
+                            if(slist_and_rsu.find(x) == slist_and_rsu.end()){
+                                slist_and_rsu[x] = sid_node_it->peu_sid;
+                            }else{
+                                slist_and_rsu[x] += sid_node_it->peu_sid;
+                            }
+                            break;
+                        }
+                    }
+                }
+
+
+                prefix_node_it = prefix_node_it->next;
             }
-
-
             sid_node_it = sid_node_it->next;
-
         }
+
+//        sid_node_it = t_uc->sid_node_head;
+//        while(sid_node_it->next!=nullptr){
+//            //Utility_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][i.first//item];
+//            //temp=0;
+//            for(int x=t_uc->prefix_item+1;x<item_quantity;x++) { //ilist
+//                prefix_node_it = sid_node_it->prefix_node_head;
+//                while(prefix_node_it->next!=nullptr){
+////                        cout<<sid_node_it->sid;
+////                        cout<<prefix_node_it->tid_prefix;
+////                        cout<<x;
+//                    if(Utility_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][x]>0){
+//                        if (ilist_and_rsu.find(x) == ilist_and_rsu.end()) {
+//                            ilist_and_rsu[x]=0;
+//                        }
+//                        break;
+//                    }
+//                    //temp++;
+//                    prefix_node_it = prefix_node_it->next;
+//                }
+//
+//            }
+//            for(int x=0;x<item_quantity;x++) {//slist
+//                for(int y=sid_node_it->prefix_node_head->tid_prefix+1;y<Utility_Matrix_set[sid_node_it->sid].size();y++){
+//                    if(Utility_Matrix_set[sid_node_it->sid][y][x]>0){
+//                        //slist_and_rsu[x]=sid_node_it->peu_sid;
+//                        if (slist_and_rsu.find(x) == slist_and_rsu.end()) {
+//                            slist_and_rsu[x]=0;
+//                        }
+//                        break;
+//                    }
+//                }
+//            }
+//            sid_node_it = sid_node_it->next;
+//        }
 
 //            cout<<t_uc->seq<<"\n";
 //            cout<<t_uc->prefix_item<<"\n";
@@ -778,20 +843,14 @@ int main() {
         cout<<"U_t:"<<i->U_t<<endl;
         cout<<"Peu:"<<i->Peu<<endl;
     }
+    cout<<HUSP_set.size();
 
 //    Utility_chain_sid_node *siit;
 //    siit = HUSP_set[1]->sid_node_head;
 //    siit = siit->next;
 //    siit = siit->next;
 //    Utility_chain_prefix_node *piit;
-    //piit = siit->prefix_node_head;
-//    cout<<"seq:"<<HUSP_set[0]->sid_node_head<<endl;
-//    cout<<"seq:"<<siit->prefix_node_head->acu<<endl;
-//    cout<<"seq:"<<siit->prefix_node_head->next->acu<<endl;
-//    cout<<"seq:"<<siit->prefix_node_head->next->next->acu<<endl;
-//    cout<<"seq:"<<siit->prefix_node_head->next->next->next->acu<<endl;
-//    cout<<"seq:"<<siit->prefix_node_head->next->next->acu<<endl;
-//    cout<<"seq:"<<siit->prefix_node_head->next->next->next<<endl;
+//    piit = siit->prefix_node_head;
 //    while(siit->next){
 //        cout<<"sid:"<<siit->sid<<endl;
 //        while (piit->next){
@@ -801,8 +860,9 @@ int main() {
 //        cout<<endl;
 //        siit = siit->next;
 //    }
-    //cout<<single_item_iu[5]<<" "<<single_item_swu[5];
-    //cout<<item_quantity;
+//    cout<<single_item_iu[5]<<" "<<single_item_swu[5];
+//    cout<<item_quantity;
+
 //    for(int i=0;i<Utility_Matrix_set.size();i++){
 //        for(int j=0;j<Utility_Matrix_set[i].size();j++){
 //            for(int k=0;k<Utility_Matrix_set[i][j].size();k++){
