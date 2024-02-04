@@ -230,13 +230,14 @@ void init_level1(const vector<vector<vector<int>>> &Utility_Matrix_set,const vec
         }
 
         if(Seq_Table->sid_node_head != sid_node_it){
-            Pue=Seq_Table->sid_node_head->peu_sid;
-            Iu = Seq_Table->sid_node_head->iu;
+            Pue=0;
+            Iu = 0;
             sid_node_it = Seq_Table->sid_node_head;
             while(sid_node_it->next){
-                sid_node_it=sid_node_it->next;
                 Pue+=sid_node_it->peu_sid;
                 Iu+=sid_node_it->iu;
+                sid_node_it=sid_node_it->next;
+
             }
             Seq_Table->Peu = Pue;
             Seq_Table->U_t = Iu;
@@ -827,7 +828,7 @@ void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector
 }
 
 int main() {
-    int item_quantity,threshold=0;//item-> a=0,b=1,...
+    int item_quantity,threshold=100;//item-> a=0,b=1,...
     vector<vector<vector<int>>> Utility_Matrix_set;
     vector<vector<vector<int>>> Utility_Ru_Matrix_set;
     map<int,int> single_item_iu,single_item_swu;
@@ -843,7 +844,7 @@ int main() {
         cout<<"U_t:"<<i->U_t<<endl;
         cout<<"Peu:"<<i->Peu<<endl;
     }
-    cout<<HUSP_set.size();
+    cout<<HUSP_set.size()<<endl;
 
 //    Utility_chain_sid_node *siit;
 //    siit = HUSP_set[1]->sid_node_head;
@@ -860,8 +861,8 @@ int main() {
 //        cout<<endl;
 //        siit = siit->next;
 //    }
-//    cout<<single_item_iu[5]<<" "<<single_item_swu[5];
-//    cout<<item_quantity;
+    //cout<<single_item_iu[5]<<" "<<single_item_swu[5];
+    //cout<<item_quantity;
 
 //    for(int i=0;i<Utility_Matrix_set.size();i++){
 //        for(int j=0;j<Utility_Matrix_set[i].size();j++){
