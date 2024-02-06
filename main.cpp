@@ -9,8 +9,8 @@ using namespace std;
 class Utility_chain_prefix_node{
 public:
     int tid_prefix;
-    int acu;
-    int ru;
+    double acu;
+    double ru;
     Utility_chain_prefix_node *next;
     Utility_chain_prefix_node(){
         tid_prefix=-1;
@@ -22,8 +22,8 @@ public:
 class Utility_chain_sid_node{
 public:
     int sid;
-    int peu_sid;
-    int iu;
+    double peu_sid;
+    double iu;
     Utility_chain_prefix_node *prefix_node_head;
     Utility_chain_sid_node *next;
     Utility_chain_sid_node(){
@@ -38,8 +38,8 @@ public:
 class Seq_table{
 public:
     string seq;
-    int Peu;
-    int U_t;
+    double Peu;
+    double U_t;
     int prefix_item;
     Utility_chain_sid_node *sid_node_head;
     Seq_table(){
@@ -51,15 +51,16 @@ public:
     }
 };
 
-void init_UMatrix_RMatrix(vector<vector<vector<int>>> &Utility_Matrix_set,vector<vector<vector<int>>> &Utility_Ru_Matrix_set,int &item_quantity,map<int,int> &single_item_iu,map<int,int> &single_item_swu){
+void init_UMatrix_RMatrix(vector<vector<vector<double>>> &Utility_Matrix_set,vector<vector<vector<double>>> &Utility_Ru_Matrix_set,int &item_quantity,map<int,double> &single_item_iu,map<int,double> &single_item_swu){
     ifstream in;
     in.open("paper_utb.txt");
     if(in.fail()){
         cout << "input file opening failed";
         exit(1);
     }
-    map<int,int> Utility_table;
-    int item,utility;
+    map<int,double> Utility_table;
+    int item;
+    double utility;
     while(!in.eof()) {
         in >> item >> utility;
         item--;
@@ -81,17 +82,18 @@ void init_UMatrix_RMatrix(vector<vector<vector<int>>> &Utility_Matrix_set,vector
     item_quantity = Utility_table.size();
 
     vector<bool> bitmap_item_exist(item_quantity,false);//這要拿來做SWU和IU
-    vector<int> max_iu_item(item_quantity,0);
+    vector<double> max_iu_item(item_quantity,0);
 
-    vector<vector<int>> Utility_Matrix;
-    vector<vector<int>> Utility_Ru_Matrix;
+    vector<vector<double>> Utility_Matrix;
+    vector<vector<double>> Utility_Ru_Matrix;
 
-    vector<int> itemset_ru;
+    vector<double> itemset_ru;
 
 
-    int sequence_total_utility=0;
-    vector<int> Itemset(item_quantity,0);
-    int sid,itemset_id,quantity;
+    double sequence_total_utility=0;
+    vector<double> Itemset(item_quantity,0);
+    int sid,itemset_id;
+    double quantity;
     int pre_sid=0 , pre_itemset_id=0;
     int run_times=0;
     while(!in.eof()) {
@@ -176,10 +178,10 @@ void init_UMatrix_RMatrix(vector<vector<vector<int>>> &Utility_Matrix_set,vector
     in.close();
 
 }
-void init_level1(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector<vector<vector<int>>> &Utility_Ru_Matrix_set,const int &item_quantity,const int &threshold,const map<int,int> &single_item_swu,map<int,Seq_table*> &single_item_Utility_Chain){
+void init_level1(const vector<vector<vector<double>>> &Utility_Matrix_set,const vector<vector<vector<double>>> &Utility_Ru_Matrix_set,const int &item_quantity,const double &threshold,const map<int,double> &single_item_swu,map<int,Seq_table*> &single_item_Utility_Chain){
     Seq_table * Seq_Table;
-    int sid_peu,iu_add_ru,iu;
-    int Pue,Iu;
+    double sid_peu,iu_add_ru,iu;
+    double Pue,Iu;
     for(int item=0;item<item_quantity;item++){
         //cout<<single_item_swu.at(item)<<"\n\n";
         if(single_item_swu.at(item)<threshold){
@@ -252,13 +254,13 @@ void init_level1(const vector<vector<vector<int>>> &Utility_Matrix_set,const vec
     }
 }
 
-void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector<vector<vector<int>>> &Utility_Ru_Matrix_set
-              ,const map<int,Seq_table*> &single_item_Utility_Chain,const int &item_quantity,const int &threshold,int level
-              ,vector<Seq_table*> &HUSP_set
+void HUS_Span(const vector<vector<vector<double>>> &Utility_Matrix_set,const vector<vector<vector<double>>> &Utility_Ru_Matrix_set
+              ,const map<int,Seq_table*> &single_item_Utility_Chain,const int &item_quantity,const double &threshold,int level
               ,Seq_table *t_uc
+              ,vector<pair<string,int>> &HUSP_Set_pair
               ){
     level++;
-    map<int,int> ilist_and_rsu,slist_and_rsu;//first->可擴展item second->可擴展item的RSU
+    map<int,double> ilist_and_rsu,slist_and_rsu;//first->可擴展item second->可擴展item的RSU
     Utility_chain_prefix_node* prefix_node_it;
     Utility_chain_sid_node * sid_node_it;
     int temp;
@@ -270,7 +272,7 @@ void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector
             }
 
             if(i.second->U_t>threshold){
-                HUSP_set.push_back(i.second);
+                HUSP_Set_pair.push_back(make_pair(i.second->seq,i.second->U_t));
             }
             //cout<<i.first<<"\n";
             //cout<<i.second->Peu<<"\n";
@@ -310,72 +312,13 @@ void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector
                 }
                 sid_node_it = sid_node_it->next;
             }
-            //cout<<ilist_and_rsu[0];
 
-//            sid_node_it = i.second->sid_node_head;
-//            while(sid_node_it->next!=nullptr){
-//                //Utility_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][i.first//item];
-//                //temp=0;
-//                for(int x=i.first+1;x<item_quantity;x++) { //ilist
-//                    prefix_node_it = sid_node_it->prefix_node_head;
-//                    while(prefix_node_it->next!=nullptr){
-////                        cout<<sid_node_it->sid;
-////                        cout<<prefix_node_it->tid_prefix;
-////                        cout<<x;
-//                        if(Utility_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][x]>0){
-//                            if (ilist_and_rsu.find(x) == ilist_and_rsu.end()) {
-//                                ilist_and_rsu[x]=0;
-//                            }
-//                            break;
-//                        }
-//                        //temp++;
-//                        prefix_node_it = prefix_node_it->next;
-//                    }
-//                    //cout<<ilist_and_rsu[x];
-//
-//                }
-//                for(int x=0;x<item_quantity;x++) {//slist
-//                    for(int y=sid_node_it->prefix_node_head->tid_prefix+1;y<Utility_Matrix_set[sid_node_it->sid].size();y++){
-//                        if(Utility_Matrix_set[sid_node_it->sid][y][x]>0){
-//                            //slist_and_rsu[x]=sid_node_it->peu_sid;
-//                            if (slist_and_rsu.find(x) == slist_and_rsu.end()) {
-//                                slist_and_rsu[x]=0;
-//                            }
-//                            break;
-//                        }
-//                    }
-//                }
-//
-//
-//                sid_node_it = sid_node_it->next;
-//
-//            }
-
-
-//            cout<<ilist_and_rsu[0];
-//            cout<<slist_and_rsu[0];
-//            cout<<i.first<<"\n";
-//            for(pair<const int,int> x:slist_and_rsu){
-//                //先建t'CHAIN
-//                cout<<x.first<<" ";
-//                cout<<x.second<<" \n";
-//                //cout<<x.first<<" ";
-//            }
-//            cout<<endl;
-//            cout<<i.first<<"\n";
-//            for(pair<const int,int> x:ilist_and_rsu){
-//                //先建t'CHAIN
-//                cout<<x.first<<" ";
-//                cout<<x.second<<" \n";
-//            }
-//
-//            cout<<endl<<endl;
 
 
             Seq_table *t1_uc;//t'的uc
             Utility_chain_sid_node *t1_sid_node_it , *t_sid_node_it;
             Utility_chain_prefix_node *t1_prefix_node_it ,*t_prefix_node_it;
-            for(pair<const int,int> item:ilist_and_rsu) {//I extension
+            for(pair<const int,double> item:ilist_and_rsu) {//I extension
                 if(item.second < threshold){ //delete low RSU items
                     continue;
                 }
@@ -395,8 +338,8 @@ void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector
                 t_sid_node_it=i.second->sid_node_head;
 
 
-                int max_sid_peu,max_sid_iu;
-                int seq_Peu=0,seq_U_t=0;
+                double max_sid_peu,max_sid_iu;
+                double seq_Peu=0,seq_U_t=0;
                 bool t1_prefix_flag;
                 while(t_sid_node_it->next != nullptr){
                     t1_prefix_flag = false;
@@ -443,13 +386,13 @@ void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector
                 t1_uc->Peu = seq_Peu;
                 t1_uc->prefix_item = item.first;
                 if(t1_uc->U_t>threshold){
-                    HUSP_set.push_back(t1_uc);
+                    HUSP_Set_pair.push_back(make_pair(t1_uc->seq,t1_uc->U_t));
                 }
-                HUS_Span(Utility_Matrix_set,Utility_Ru_Matrix_set,single_item_Utility_Chain,item_quantity,threshold,level,HUSP_set,t1_uc);
+                HUS_Span(Utility_Matrix_set,Utility_Ru_Matrix_set,single_item_Utility_Chain,item_quantity,threshold,level,t1_uc,HUSP_Set_pair);
 
             }
 
-            for(pair<const int,int> item:slist_and_rsu) {
+            for(pair<const int,double> item:slist_and_rsu) {
                 if(item.second < threshold){ //delete low RSU items
                     continue;
                 }
@@ -465,8 +408,8 @@ void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector
                 t_sid_node_it=i.second->sid_node_head;
 
 
-                int max_sid_peu,max_sid_iu;
-                int seq_Peu=0,seq_U_t=0;
+                double max_sid_peu,max_sid_iu;
+                double seq_Peu=0,seq_U_t=0;
                 bool t1_prefix_flag;
                 vector<int> prefix_checker;
                 vector<int>::iterator prefix_checker_it;
@@ -543,11 +486,41 @@ void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector
                 t1_uc->Peu = seq_Peu;
                 t1_uc->prefix_item = item.first;
                 if(t1_uc->U_t>threshold){
-                    HUSP_set.push_back(t1_uc);
+                    HUSP_Set_pair.push_back(make_pair(t1_uc->seq,t1_uc->U_t));
+
                 }
-                HUS_Span(Utility_Matrix_set,Utility_Ru_Matrix_set,single_item_Utility_Chain,item_quantity,threshold,level,HUSP_set,t1_uc);
+                HUS_Span(Utility_Matrix_set,Utility_Ru_Matrix_set,single_item_Utility_Chain,item_quantity,threshold,level,t1_uc,HUSP_Set_pair);
+            }
+            Utility_chain_sid_node *delete_sid_node,*tmp_sid_node_it;
+            Utility_chain_prefix_node *delete_prefix_node,*tmp_prefix_node_it;
+            tmp_sid_node_it = i.second->sid_node_head;
+            while(tmp_sid_node_it->next!=nullptr) {
+                tmp_prefix_node_it = tmp_sid_node_it->prefix_node_head;
+                while(tmp_prefix_node_it->next!=nullptr){
+                    delete_prefix_node = tmp_prefix_node_it;
+                    tmp_prefix_node_it = tmp_prefix_node_it->next;
+                    delete [] delete_prefix_node;
+                }
+                delete_sid_node = tmp_sid_node_it;
+                tmp_sid_node_it = tmp_sid_node_it->next;
+                delete [] delete_sid_node;
             }
 
+//            Utility_chain_sid_node *delete_sid_node;
+//            Utility_chain_prefix_node *delete_prefix_node;
+//            sid_node_it = i.second->sid_node_head;
+//            while(sid_node_it->next!=nullptr) {
+//                prefix_node_it = sid_node_it->prefix_node_head;
+//                while(prefix_node_it->next!=nullptr){
+//                    delete_prefix_node = prefix_node_it;
+//                    prefix_node_it = prefix_node_it->next;
+//                    delete [] delete_prefix_node;
+//                }
+//                delete_sid_node = sid_node_it;
+//                sid_node_it = sid_node_it->next;
+//                delete [] delete_sid_node;
+//            }
+//            delete [] i.second;
             ilist_and_rsu.clear();
             slist_and_rsu.clear();
 
@@ -590,66 +563,11 @@ void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector
             sid_node_it = sid_node_it->next;
         }
 
-//        sid_node_it = t_uc->sid_node_head;
-//        while(sid_node_it->next!=nullptr){
-//            //Utility_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][i.first//item];
-//            //temp=0;
-//            for(int x=t_uc->prefix_item+1;x<item_quantity;x++) { //ilist
-//                prefix_node_it = sid_node_it->prefix_node_head;
-//                while(prefix_node_it->next!=nullptr){
-////                        cout<<sid_node_it->sid;
-////                        cout<<prefix_node_it->tid_prefix;
-////                        cout<<x;
-//                    if(Utility_Matrix_set[sid_node_it->sid][prefix_node_it->tid_prefix][x]>0){
-//                        if (ilist_and_rsu.find(x) == ilist_and_rsu.end()) {
-//                            ilist_and_rsu[x]=0;
-//                        }
-//                        break;
-//                    }
-//                    //temp++;
-//                    prefix_node_it = prefix_node_it->next;
-//                }
-//
-//            }
-//            for(int x=0;x<item_quantity;x++) {//slist
-//                for(int y=sid_node_it->prefix_node_head->tid_prefix+1;y<Utility_Matrix_set[sid_node_it->sid].size();y++){
-//                    if(Utility_Matrix_set[sid_node_it->sid][y][x]>0){
-//                        //slist_and_rsu[x]=sid_node_it->peu_sid;
-//                        if (slist_and_rsu.find(x) == slist_and_rsu.end()) {
-//                            slist_and_rsu[x]=0;
-//                        }
-//                        break;
-//                    }
-//                }
-//            }
-//            sid_node_it = sid_node_it->next;
-//        }
-
-//            cout<<t_uc->seq<<"\n";
-//            cout<<t_uc->prefix_item<<"\n";
-//
-//            cout<<endl;
-//            //cout<<t_uc->prefix_item<<"\n";
-//            for(pair<const int,int> x:ilist_and_rsu){
-//                //先建t'CHAIN
-//                cout<<x.first<<" ";
-//                cout<<x.second<<" \n";
-//            }
-//            cout<<endl;
-//            for(pair<const int,int> x:slist_and_rsu){
-//                //先建t'CHAIN
-//                cout<<x.first<<" ";
-//                cout<<x.second<<" \n";
-//                //cout<<x.first<<" ";
-//            }
-//
-//
-//            cout<<endl<<endl;
 
         Seq_table *t1_uc;//t'的uc
         Utility_chain_sid_node *t1_sid_node_it , *t_sid_node_it;
         Utility_chain_prefix_node *t1_prefix_node_it ,*t_prefix_node_it;
-        for(pair<const int,int> item:ilist_and_rsu) {//I extension
+        for(pair<const int,double> item:ilist_and_rsu) {//I extension
             if(item.second < threshold){ //delete low RSU items
                 continue;
             }
@@ -665,8 +583,8 @@ void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector
             t_sid_node_it=t_uc->sid_node_head;
 
 
-            int max_sid_peu,max_sid_iu;
-            int seq_Peu=0,seq_U_t=0;
+            double max_sid_peu,max_sid_iu;
+            double seq_Peu=0,seq_U_t=0;
             bool t1_prefix_flag;
             while(t_sid_node_it->next != nullptr){
                 t1_prefix_flag = false;
@@ -713,13 +631,13 @@ void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector
             t1_uc->Peu = seq_Peu;
             t1_uc->prefix_item = item.first;
             if(t1_uc->U_t>threshold){
-                HUSP_set.push_back(t1_uc);
+                HUSP_Set_pair.push_back(make_pair(t1_uc->seq,t1_uc->U_t));
             }
-            HUS_Span(Utility_Matrix_set,Utility_Ru_Matrix_set,single_item_Utility_Chain,item_quantity,threshold,level,HUSP_set,t1_uc);
+            HUS_Span(Utility_Matrix_set,Utility_Ru_Matrix_set,single_item_Utility_Chain,item_quantity,threshold,level,t1_uc,HUSP_Set_pair);
 
         }
 
-        for(pair<const int,int> item:slist_and_rsu) {
+        for(pair<const int,double> item:slist_and_rsu) {
             if(item.second < threshold){ //delete low RSU items
                 continue;
             }
@@ -735,8 +653,8 @@ void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector
             t_sid_node_it=t_uc->sid_node_head;
 
 
-            int max_sid_peu,max_sid_iu;
-            int seq_Peu=0,seq_U_t=0;
+            double max_sid_peu,max_sid_iu;
+            double seq_Peu=0,seq_U_t=0;
             bool t1_prefix_flag;
             vector<int> prefix_checker;
             vector<int>::iterator prefix_checker_it;
@@ -813,38 +731,77 @@ void HUS_Span(const vector<vector<vector<int>>> &Utility_Matrix_set,const vector
             t1_uc->Peu = seq_Peu;
             t1_uc->prefix_item = item.first;
             if(t1_uc->U_t>threshold){
-                HUSP_set.push_back(t1_uc);
+                HUSP_Set_pair.push_back(make_pair(t1_uc->seq,t1_uc->U_t));
             }
-            HUS_Span(Utility_Matrix_set,Utility_Ru_Matrix_set,single_item_Utility_Chain,item_quantity,threshold,level,HUSP_set,t1_uc);
+            HUS_Span(Utility_Matrix_set,Utility_Ru_Matrix_set,single_item_Utility_Chain,item_quantity,threshold,level,t1_uc,HUSP_Set_pair);
         }
 
-
-
-        //HUS_Span(Utility_Matrix_set,Utility_Ru_Matrix_set,single_item_Utility_Chain,item_quantity,threshold,level,HUSP_set,t1_uc);
         ilist_and_rsu.clear();
         slist_and_rsu.clear();
+
+        Utility_chain_sid_node *delete_sid_node,*tmp_sid_node_it;
+        Utility_chain_prefix_node *delete_prefix_node,*tmp_prefix_node_it;
+        tmp_sid_node_it = t_uc->sid_node_head;
+        while(tmp_sid_node_it->next!=nullptr) {
+            tmp_prefix_node_it = tmp_sid_node_it->prefix_node_head;
+            while(tmp_prefix_node_it->next!=nullptr){
+                delete_prefix_node = tmp_prefix_node_it;
+                tmp_prefix_node_it = tmp_prefix_node_it->next;
+                delete [] delete_prefix_node;
+            }
+            delete_sid_node = tmp_sid_node_it;
+            tmp_sid_node_it = tmp_sid_node_it->next;
+            delete [] delete_sid_node;
+        }
+        //delete [] t_uc;
     }
 
 }
 
 int main() {
-    int item_quantity,threshold=100;//item-> a=0,b=1,...
-    vector<vector<vector<int>>> Utility_Matrix_set;
-    vector<vector<vector<int>>> Utility_Ru_Matrix_set;
-    map<int,int> single_item_iu,single_item_swu;
-    init_UMatrix_RMatrix(Utility_Matrix_set,Utility_Ru_Matrix_set,item_quantity,single_item_iu,single_item_swu);
-    map<int,Seq_table*> single_item_Utility_Chain;
-    vector<Seq_table*> HUSP_set;
-    init_level1(Utility_Matrix_set,Utility_Ru_Matrix_set,item_quantity,threshold,single_item_swu,single_item_Utility_Chain);
-    HUS_Span(Utility_Matrix_set,Utility_Ru_Matrix_set,single_item_Utility_Chain,item_quantity,threshold,0,HUSP_set,
-             nullptr);
+    try {
+        int item_quantity;//item-> a=0,b=1,...
+        double threshold=100;
+        vector<vector<vector<double>>> Utility_Matrix_set;
+        vector<vector<vector<double>>> Utility_Ru_Matrix_set;
+        map<int,double> single_item_iu,single_item_swu;
+        init_UMatrix_RMatrix(Utility_Matrix_set,Utility_Ru_Matrix_set,item_quantity,single_item_iu,single_item_swu);
+        map<int,Seq_table*> single_item_Utility_Chain;
+        vector<pair<string,int>> HUSP_Set_pair;
+        init_level1(Utility_Matrix_set,Utility_Ru_Matrix_set,item_quantity,threshold,single_item_swu,single_item_Utility_Chain);
+        HUS_Span(Utility_Matrix_set,Utility_Ru_Matrix_set,single_item_Utility_Chain,item_quantity,threshold,0,
+                 nullptr,HUSP_Set_pair);
 
-    for(auto i:HUSP_set){
-        cout<<"seq:"<<i->seq<<endl;
-        cout<<"U_t:"<<i->U_t<<endl;
-        cout<<"Peu:"<<i->Peu<<endl;
+        for(auto i:HUSP_Set_pair){
+            cout<<"seq:"<<i.first<<endl;
+            cout<<"U_t:"<<i.second<<endl;
+        }
+        cout<<HUSP_Set_pair.size()<<endl;
+        // 你的代码
+//        for(int i=0;i<Utility_Matrix_set.size();i++){
+//            for(int j=0;j<Utility_Matrix_set[i].size();j++){
+//                for(int k=0;k<Utility_Matrix_set[i][j].size();k++){
+//                    cout<<Utility_Matrix_set[i][j][k]<<" ";
+//                }
+//                cout<<endl;
+//            }
+//            cout<<"--------------------\n";
+//        }
+//        cout<<"**************************\n";
+//        for(int i=0;i<Utility_Ru_Matrix_set.size();i++){
+//            for(int j=0;j<Utility_Ru_Matrix_set[i].size();j++){
+//                for(int k=0;k<Utility_Ru_Matrix_set[i][j].size();k++){
+//                    cout<<Utility_Ru_Matrix_set[i][j][k]<<" ";
+//                }
+//                cout<<endl;
+//            }
+//            cout<<"--------------------\n";
+//        }
+
+    } catch (const std::bad_alloc& e) {
+        std::cerr << "Memory allocation failed: " << e.what() << std::endl;
     }
-    cout<<HUSP_set.size()<<endl;
+
 
 //    Utility_chain_sid_node *siit;
 //    siit = HUSP_set[1]->sid_node_head;
@@ -864,24 +821,6 @@ int main() {
     //cout<<single_item_iu[5]<<" "<<single_item_swu[5];
     //cout<<item_quantity;
 
-//    for(int i=0;i<Utility_Matrix_set.size();i++){
-//        for(int j=0;j<Utility_Matrix_set[i].size();j++){
-//            for(int k=0;k<Utility_Matrix_set[i][j].size();k++){
-//                cout<<Utility_Matrix_set[i][j][k]<<" ";
-//            }
-//            cout<<endl;
-//        }
-//        cout<<"--------------------\n";
-//    }
-//    cout<<"**************************\n";
-//    for(int i=0;i<Utility_Ru_Matrix_set.size();i++){
-//        for(int j=0;j<Utility_Ru_Matrix_set[i].size();j++){
-//            for(int k=0;k<Utility_Ru_Matrix_set[i][j].size();k++){
-//                cout<<Utility_Ru_Matrix_set[i][j][k]<<" ";
-//            }
-//            cout<<endl;
-//        }
-//        cout<<"--------------------\n";
-//    }
+
     return 0;
 }
